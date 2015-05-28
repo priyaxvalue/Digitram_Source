@@ -1,0 +1,213 @@
+
+#import "ConsignmentVC.h"
+#import "ScrollViewToPDF.h"
+#import <QuartzCore/QuartzCore.h>
+
+#define kDefaultPageHeight 792
+#define kDefaultPageWidth  612
+#define kMargin 50
+@interface ConsignmentVC ()
+
+@end
+
+@implementation ConsignmentVC
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    //1,928
+    [scrollView setContentSize:(CGSizeMake(768, 1928))];
+    
+   
+    UIBarButtonItem * saveButton = [[ UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStyleDone target:self action:@selector(saveToDataBase:)] ;
+    UIBarButtonItem * pdfButton = [[ UIBarButtonItem alloc] initWithTitle:@"PDF" style:UIBarButtonItemStyleDone target:self action:@selector(openPerPagePDF:)] ;
+    self.navigationItem.rightBarButtonItem = pdfButton ;
+    NSArray *arry = [[NSArray alloc]initWithObjects:pdfButton,saveButton, nil];
+    self.navigationItem.rightBarButtonItems = arry ;
+}
+
+-(void)viewWillAppear:(BOOL)animated{
+    
+//    img_Sign1.image = nil;
+//    img_Sign2.image = nil;
+}
+
+#pragma mark - UITextFiled Delegates
+- (BOOL)textFieldShouldBeginEditing:(UITextField *)textField
+{
+    if (textField == txtdecharge_date) {
+        [self.view endEditing:YES];
+        [self showDatePicker];
+        return NO;
+    }
+    return YES;
+}
+- (void)textFieldDidBeginEditing:(UITextField *)textField
+{
+    
+}
+- (BOOL)textFieldShouldEndEditing:(UITextField *)textField
+{
+    
+    
+    return YES;
+    
+}
+
+#pragma mark - Showing DatePicker
+
+-(void)showDatePicker
+{
+    UIDatePicker *datePicker = [[UIDatePicker alloc]init];
+    [datePicker setDate:[NSDate date]];
+    datePicker.datePickerMode = UIDatePickerModeDate;
+    [datePicker addTarget:self action:@selector(dateTextField:) forControlEvents:UIControlEventValueChanged];
+    [txtdecharge_date setInputView:datePicker];
+    
+    UIViewController* popoverContent = [[UIViewController alloc] init];
+    UIView *popoverView = [[UIView alloc] init];
+    popoverView.backgroundColor = [UIColor clearColor];
+    [popoverView addSubview:datePicker];
+    
+    popoverContent.view = popoverView;
+    UIPopoverController *popoverController;
+    popoverController = [[UIPopoverController alloc] initWithContentViewController:popoverContent];
+    popoverController.delegate=self;
+    
+    [popoverController setPopoverContentSize:CGSizeMake(320, 264) animated:NO];
+[popoverController presentPopoverFromRect:txtdecharge_date.frame inView:scrollView permittedArrowDirections:UIPopoverArrowDirectionAny animated:YES];
+}
+
+-(void) dateTextField:(id)sender
+{
+    UIDatePicker *picker = (UIDatePicker*)txtdecharge_date.inputView;
+    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+    NSDate *eventDate = picker.date;
+    [dateFormat setDateFormat:@"dd/MM/yyyy"];
+    
+    NSString *dateString = [dateFormat stringFromDate:eventDate];
+    txtdecharge_date.text = [NSString stringWithFormat:@"%@",dateString];
+}
+
+#pragma mark - Saving to DB
+
+-(IBAction)saveToDataBase:(id)sender
+{
+    
+    if ([[[NSUserDefaults standardUserDefaults]valueForKey:@"CongestionID"] isEqual:[NSNull null]]) {
+        i=0;
+    }
+    else{
+        i = [[[NSUserDefaults standardUserDefaults]valueForKey:@"CongestionID"]intValue];
+        i++;
+    }
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%d",i] forKey:@"CongestionID"];
+    
+    NSString *strQuery = [NSString stringWithFormat:@"insert into consignment(consignment_id,consignation_m,enterprise,consignee_a,consignee_h,consignee_mn,risques,suivants,consignment,accord,termines_a,termines_h,termines_mn,necessaires,representant,deconsignation_a,deconsignation_h,     deconsignation_mn,authorisation_accord,authorisation_consignation,nom_remplace,nom_remplacant,sign_remplace,sign_remplacant,sign_consignation,sign_consignation_a,sign_consignation_h,sign_consignation_mn,delegation_represent,delegation_demande,delegation_charge,d_effectuer_les,delegation_a,delegation_h,delegation_mn,delegation_risques,plus_tard_a,plus_tard_h,plus_tard_mn,le_represendant,le_charge,decharge_represendant,decharge_de_toutes,decharge_de_travaux,decharge_suivant,decharge_duree_de,decharge_date,decharge_heure,decharge_travaux,decharge_le_represendant) values (\"%d\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\")",i,txtConsignation_m.text,txtEnterprise.text,txtConsignee_a.text,txtConsignee_h.text,txtConsignee_mn.text,txtRisques.text,txtSuivants.text,txtConsignment.text,txtAccord.text,txtTermines_a.text,txtTermines_h.text,txtTermines_mn.text,txtNecessaires.text,txtRepresentant.text,txtDeconsignation_a.text,txtDeconsignation_h.text,txtDeconsignation_mn.text,txtAuthorisation_accord.text,txtAuthorisation_consignation.text,txtNom_remplace.text,txtNom_remplacant.text,txtSign_remplace.text,txtSign_remplacant.text,txtSign_consignation.text,txtSign_consignation_a.text,txtSign_consignation_h.text,txtSign_consignation_mn.text,txtDelegation_represent.text,txtDelegation_demande.text,txtDelegation_charge.text,txtd_effectuer_les.text,txtDelegation_a.text,txtDelegation_h.text,txtDelegation_mn,txtDelegation_risques.text,txtPlus_tard_a.text,txtPlus_tard_h.text,txtPlus_tard_mn.text,txtle_represendant.text,txtle_charge.text,txtdecharge_le_represendant.text,txtdecharge_de_toutes.text,txtdecharge_de_travaux.text,txtdecharge_suivant.text,txtdecharge_duree_de.text,txtdecharge_date.text,txtdecharge_heure.text,txtdecharge_travaux.text,txtdecharge_represendant.text];
+    
+    [[DBSqlite dbManager]insertStatement:strQuery];
+    
+//    UIAlertView *alert = [[UIAlertView alloc]initWithTitle:@"" message:@"Saved" delegate:self cancelButtonTitle:@"OK" otherButtonTitles:nil, nil];
+//    [alert show];
+    
+}
+
+
+#pragma mark - PDF Creation
+
+-(IBAction)generatePDF:(id)sender
+{
+    
+/*    NSString *aFilename = @"Causerie.pdf";
+        // Creates a mutable data object for updating with binary data, like a byte array
+//        NSMutableData *pdfData = [NSMutableData data];
+//        
+//        // Points the pdf converter to the mutable data object and to the UIView to be converted
+//        UIGraphicsBeginPDFContextToData(pdfData, scrollView.bounds, nil);
+//        UIGraphicsBeginPDFPage();
+//        CGContextRef pdfContext = UIGraphicsGetCurrentContext();
+//        
+//        
+//        // draws rect to the view and thus this is captured by UIGraphicsBeginPDFContextToData
+//        
+//        [scrollView.layer renderInContext:pdfContext];
+//        
+//        // remove PDF rendering context
+//        UIGraphicsEndPDFContext();
+    
+    CGRect scrollSize = CGRectMake(0,0,scrollView.contentSize.width,scrollView.contentSize.height);
+
+    
+    NSMutableData* pdfData = [NSMutableData data];
+    UIGraphicsBeginPDFContextToData(pdfData, scrollSize, nil);
+    UIGraphicsBeginPDFPage();
+    CGContextRef pdfContext = UIGraphicsGetCurrentContext();
+    CGContextScaleCTM(pdfContext, 1, 1);
+    [scrollView.layer renderInContext:pdfContext];
+    UIGraphicsEndPDFContext();
+    
+        // Retrieves the document directories from the iOS device
+        NSArray* documentDirectories = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask,YES);
+        
+        NSString* documentDirectory = [documentDirectories objectAtIndex:0];
+        NSString* documentDirectoryFilename = [documentDirectory stringByAppendingPathComponent:aFilename];
+        
+        // instructs the mutable data object to write its context to a file on disk
+        [pdfData writeToFile:documentDirectoryFilename atomically:YES];
+        NSLog(@"documentDirectoryFileName: %@",documentDirectoryFilename);
+    
+    [self openPath:documentDirectoryFilename];*/
+
+    
+}
+
+
+
+- (IBAction)openPerPagePDF:(id)sender {
+    NSData *pdfData = [ScrollViewToPDF pdfDataOfScrollView:scrollView];
+    NSString *tmpDirectory = NSTemporaryDirectory();
+    NSString *path = [tmpDirectory stringByAppendingPathComponent:@"image.pdf"];
+    [pdfData writeToFile:path atomically:NO];
+    NSLog(@"tmpDirectory: %@",path);
+    
+    
+    
+
+    
+    [self openPath:path];
+    
+    
+}
+
+- (void)openPath:(NSString *)pathString {
+    
+    NSURL *path = [NSURL fileURLWithPath:pathString];
+    NSURLRequest *urlRequest = [NSURLRequest requestWithURL:path];
+    UIWebView *webView = [[UIWebView alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
+    webView.scalesPageToFit = YES;
+    [webView loadRequest:urlRequest];
+    UIViewController *viewController = [[UIViewController alloc] init];
+    viewController.view = webView;
+    [self.navigationController pushViewController:viewController animated:YES];
+    
+    //system([[NSString stringWithFormat:@"open '%@'", self.pdfPath] cStringUsingEncoding:NSUTF8StringEncoding]);
+    
+}
+
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+/*
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ */
+
+@end

@@ -1,0 +1,13 @@
+//
+//  HazardViewController.h
+//  Causerie
+//
+//
+//
+
+#import <UIKit/UIKit.h>
+
+@interface HazardViewController : UIViewController
+@property (strong, nonatomic) IBOutlet UIScrollView *scroll_View;
+
+@end

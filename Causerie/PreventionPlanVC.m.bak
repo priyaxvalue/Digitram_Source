@@ -1,0 +1,129 @@
+//
+//  PreventionPlanVC.m
+//  Causerie
+//
+//  Created by Balladonia iTechnologies on 18/02/15.
+//  Copyright (c) 2015 Balladonia iTechnologies. All rights reserved.
+//
+
+#import "PreventionPlanVC.h"
+#import "ScrollViewToPDF.h"
+#import "DBSqlite.h"
+
+@interface PreventionPlanVC ()
+
+@end
+
+@implementation PreventionPlanVC
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    // Do any additional setup after loading the view.
+    [scrollview setContentSize:(CGSizeMake(768, 1924))];
+    self.title = @"Plan de prévention pour travaux" ;
+    UIBarButtonItem * saveButton = [[ UIBarButtonItem alloc] initWithTitle:@"Save" style:UIBarButtonItemStyleDone target:self action:@selector(saveToDataBase)] ;
+    UIBarButtonItem * pdfButton = [[ UIBarButtonItem alloc] initWithTitle:@"PDF" style:UIBarButtonItemStyleDone target:self action:@selector(openPerPagePDF:)] ;
+    self.navigationItem.rightBarButtonItem = pdfButton ;
+    NSArray *arry = [[NSArray alloc]initWithObjects:pdfButton,saveButton, nil];
+    self.navigationItem.rightBarButtonItems = arry ;
+    
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+#pragma mark >> DATE PICKER <<
+-(void)showDatePicker : ( UITextField *) currentTextfield
+{
+    NSLog(@"SHow date picker") ;
+    UIDatePicker *datePicker = [[UIDatePicker alloc]init];
+    [datePicker setDate:[NSDate date]];
+    datePicker.datePickerMode = UIDatePickerModeDate;
+    [datePicker addTarget:self action:@selector(dateTextField:) forControlEvents:UIControlEventValueChanged];
+    [currentTextfield setInputView:datePicker];
+}
+
+-(void) dateTextField: (UIDatePicker *) sender
+{
+    NSLog(@"datetext field ") ;
+    NSLog(@"sender : %@", sender) ;
+    UIDatePicker *picker = (UIDatePicker*)sender.inputView;
+    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+    NSDate *eventDate = picker.date;
+    [dateFormat setDateFormat:@"dd/MM/yyyy"];
+    
+    NSString *dateString = [dateFormat stringFromDate:eventDate];
+    date_CurrentTextfield.text = [NSString stringWithFormat:@"%@",dateString];
+}
+
+#pragma mark - PDF Creation
+
+- (IBAction)openPerPagePDF:(id)sender {
+    NSData *pdfData = [ScrollViewToPDF pdfDataOfScrollView:scrollview];
+    NSString *tmpDirectory = NSTemporaryDirectory();
+    NSString *path = [tmpDirectory stringByAppendingPathComponent:@"image.pdf"];
+    [pdfData writeToFile:path atomically:NO];
+    NSLog(@"tmpDirectory: %@",path);
+    
+    [self openPath:path];
+}
+
+- (void)openPath:(NSString *)pathString {
+    
+    NSURL *path = [NSURL fileURLWithPath:pathString];
+    NSURLRequest *urlRequest = [NSURLRequest requestWithURL:path];
+    UIWebView *webView = [[UIWebView alloc] initWithFrame:[[UIScreen mainScreen] applicationFrame]];
+    webView.scalesPageToFit = YES;
+    [webView loadRequest:urlRequest];
+    UIViewController *viewController = [[UIViewController alloc] init];
+    viewController.view = webView;
+    [self.navigationController pushViewController:viewController animated:YES];
+    
+    //system([[NSString stringWithFormat:@"open '%@'", self.pdfPath] cStringUsingEncoding:NSUTF8StringEncoding]);
+    
+}
+
+-(void)saveToDataBase
+{
+    NSArray * array = [[ NSArray alloc] initWithObjects:self.img_Signature1,self.img_Signature2,self.img_Signature3,self.img_Signature4,self.img_Signature5, nil] ;
+    array_SignatureData = [ NSMutableArray array] ;
+    for (UIImageView *item in array)
+    {
+        UIImage * image = item.image ;
+        NSData *imgData= UIImagePNGRepresentation(image) ;
+        [array_SignatureData addObject:imgData] ;
+    }
+    NSLog(@"Img Data : %@", array_SignatureData) ;
+    
+    NSString *strQuery = [NSString stringWithFormat:@"insert into prevention(prevention_id,numero_daffaire,enterprise_eu,enterprise_ee1,enterprise_ee2,enterprise_ee3,enterprise_ee4,representee_eu,representee_ee1,representee_ee2,representee_ee3,representee_ee4,nature_des_eu,nature_des_ee1,nature_des_ee2,nature_des_ee3,nature_des_ee4,effectif_eu,effectif_ee1,effectif_ee2,effectif_ee3,effectif_ee4,signature_eu,signature_ee1,signature_ee2,signature_ee3,signature_ee4,description,date_debut,date_previsible,address,listes,accident,infirmerie,autre,consigne_specifiques,no_1,no_2,no_3,no_4,no_5,no_6,no_7,no_8,no_9,no_10) values (\"%d\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\",\"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\", \"%@\")",1,self.txt_numero.text, self.txt_EU_Enterprise.text,self.txt_EE1_Enterprise.text,self.txt_EE2_Enterprise.text,self.txt_EE3_Enterprise.text,self.txt_EE4_Enterprise.text,self.txt_EU_Representee.text,self.txt_EE1_Representee.text,self.txt_EE2_Representee.text,self.txt_EE3_Representee.text,self.txt_EE4_Representee.text,self.txt_EU_Nature.text,self.txt_EE1_Nature.text,self.txt_EE2_Nature.text,self.txt_EE3_Nature.text,self.txt_EE4_Nature.text,self.txt_EU_Effect.text,self.txt_EE1_Effect.text,self.txt_EE2_Effect.text,self.txt_EE3_Effect.text,self.txt_EE4_Effect.text,array_SignatureData[0],array_SignatureData[1],array_SignatureData[2],array_SignatureData[3],array_SignatureData[4],self.txt_Desc_Operation.text,self.txt_Date_debut.text,self.txt_Date_previsible.text,self.txt_Adresse.text,self.txt_Listes.text,self.txt_Adresse.text,self.txt_Infirmerie.text,self.txt_Autre.text,self.txt_Consignes.text,self.txt_N1.text,self.txt_N2.text,self.txt_N3.text,self.txt_N4.text,self.txt_N5.text,self.txt_N6.text,self.txt_N7.text,self.txt_N8.text,self.txt_N9.text,self.txt_N10.text];
+    
+    NSLog(@"Query for Prevention : %@", strQuery) ;
+    [[DBSqlite dbManager]insertStatement:strQuery];
+}
+
+#pragma mark >> Textfield Delegates <<
+
+-(BOOL)textFieldShouldBeginEditing:(UITextField *)textField
+{
+    date_CurrentTextfield = nil ;
+    if (textField == self.txt_Date_debut || textField == self.txt_Date_previsible)
+    {
+        NSLog(@"Entered") ;
+        date_CurrentTextfield = textField ;
+        [ self showDatePicker:textField] ;
+    }
+    return YES ;
+}
+
+/*
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ */
+
+@end
